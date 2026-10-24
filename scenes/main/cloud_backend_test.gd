@@ -2,6 +2,7 @@ extends Node
 ## Boundary tests: malformed service responses cannot strand the cast or masquerade as live AI.
 
 var failures := 0
+var passed := 0
 var callbacks := 0
 
 
@@ -31,8 +32,16 @@ func _ready() -> void:
 	_check("quota is visibly marked demo", not cloud.is_available and "quota" in cloud.get_status_text())
 	_check("quota retry backs off", cloud._retry_at_ms > Time.get_ticks_msec() + 110000)
 	_check("auth is separately labeled", "sign in" in cloud._failure_status(401, {}))
+	_check("office budget is not described as OpenAI quota", "office hourly limit" in cloud._failure_status(200, {"code": "local_hour_budget", "status": "local_limit"}))
+	_check("hourly retry deadline is honored", cloud._retry_seconds({"retry_after": 1729}) == 1729)
+	cloud._set_available(true)
+	cloud._next_request_at_ms = Time.get_ticks_msec() + 60000
+	cloud.request_chat([], {}, _receive, 2)
+	_check("scene waits locally without an HTTP request", cloud._current.is_empty() and cloud._queue.size() == 1 and not cloud._pace_timer.is_stopped())
+	cloud.drain_queue()
+	_check("switching backend cancels the paced queue", cloud._queue.is_empty() and cloud._pace_timer.is_stopped())
 	cloud.queue_free()
-	print("%d passed, %d failed" % [14 - failures, failures])
+	print("%d passed, %d failed" % [passed, failures])
 	get_tree().quit(0 if failures == 0 else 1)
 
 
@@ -44,3 +53,5 @@ func _check(label: String, passed: bool) -> void:
 	print("%s %s" % ["PASS" if passed else "FAIL", label])
 	if not passed:
 		failures += 1
+	else:
+		self.passed += 1

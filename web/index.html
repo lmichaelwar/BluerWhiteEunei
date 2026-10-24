@@ -14,9 +14,10 @@
 <div class="notice" id="notice" hidden><h2>This browser cannot render the office.</h2><p>Aphae needs WebGL2. This browser has it disabled or unavailable. Open this same page in a browser with WebGL2 support. The simulation has not started here.</p><p>The office uses saved character rules until its Luna connection is authorized. This preview never silently switches to paid API usage.</p></div>
 </main>
 <footer><span>Space · pause</span><span>C · confessionals</span><span>E · recap</span><span>L · narrative log</span><span>Click a character · follow</span><span style="margin-left:auto">A personal modification of Aphae</span></footer>
-<script>
+<script type="module">
+import {connectionStatus} from './status.mjs';
 const statusEl=document.getElementById('status');
-async function check(){const button=document.getElementById('check');button.disabled=true;try{const r=await fetch('/api/health',{cache:'no-store',signal:AbortSignal.timeout(6000)});if(!r.ok)throw Error();const h=await r.json();statusEl.textContent=h.available===true&&h.model==='gpt-6-luna'?(h.verified_inference===true?'Luna connected · live dialogue':'Luna ready · awaiting first scene'):'Rule-based preview · Luna not connected';}catch{statusEl.textContent='Rule-based preview · Luna not connected';}finally{button.disabled=false;}}
+async function check(){const button=document.getElementById('check');button.disabled=true;try{const r=await fetch('/api/health',{cache:'no-store',signal:AbortSignal.timeout(6000)});if(!r.ok)throw Error();statusEl.textContent=connectionStatus(await r.json());}catch{statusEl.textContent='Luna unavailable · rule-based behavior';}finally{button.disabled=false;}}
 document.getElementById('check').onclick=check;setInterval(()=>{if(!document.hidden)check();},30000);
 const canvas=document.createElement('canvas');const gl=canvas.getContext('webgl2');if(gl){gl.getExtension('WEBGL_lose_context')?.loseContext();document.getElementById('office').src='office/index.html';}else{document.getElementById('notice').hidden=false;document.getElementById('office').hidden=true;}check();
 </script>

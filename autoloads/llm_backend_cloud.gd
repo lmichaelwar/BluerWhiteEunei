@@ -7,6 +7,7 @@ signal status_changed(available: bool)
 const MAX_QUEUE := 12
 const REQUEST_TIMEOUT := 45.0
 const MAX_QUEUE_AGE_MS := 45000
+const DEFAULT_SCENE_INTERVAL_MS := 66000
 
 var is_available: bool = false
 var model: String = "gpt-6-luna"
@@ -17,6 +18,9 @@ var _queue: Array[Dictionary] = []
 var _http: HTTPRequest
 var _health_http: HTTPRequest
 var _current: Dictionary = {}
+var _pace_timer: Timer
+var _next_request_at_ms := 0
+var _scene_interval_ms := DEFAULT_SCENE_INTERVAL_MS
 
 
 func _ready() -> void:
@@ -28,6 +32,10 @@ func _ready() -> void:
 	_health_http.timeout = 8.0
 	add_child(_health_http)
 	_health_http.request_completed.connect(_on_health_completed)
+	_pace_timer = Timer.new()
+	_pace_timer.one_shot = true
+	_pace_timer.timeout.connect(_process_next)
+	add_child(_pace_timer)
 
 
 func configure(config: Dictionary) -> void:
@@ -84,12 +92,16 @@ func get_status_text() -> String:
 func _process_next() -> void:
 	if not is_available or not _current.is_empty():
 		return
+	if not _queue.is_empty() and Time.get_ticks_msec() < _next_request_at_ms:
+		_pace_timer.start(float(_next_request_at_ms - Time.get_ticks_msec()) / 1000.0)
+		return
 	while not _queue.is_empty():
 		var entry: Dictionary = _queue.pop_front()
 		if Time.get_ticks_msec() - int(entry["created_ms"]) > MAX_QUEUE_AGE_MS:
 			entry["callback"].call(false, {}, "Cloud request expired")
 			continue
 		_current = entry
+		_next_request_at_ms = Time.get_ticks_msec() + _scene_interval_ms
 		var body := {"model": model, "messages": entry["messages"], "stream": false,
 			"format": entry["format"], "options": entry["options"]}
 		var err := _http.request(_base_url + "/api/chat", ["Content-Type: application/json"],
@@ -104,6 +116,9 @@ func _on_health_completed(result: int, code: int, _headers: PackedStringArray, b
 	var data: Variant = _parse_json(body.get_string_from_utf8())
 	if result == HTTPRequest.RESULT_SUCCESS and code == 200 and data is Dictionary and data.get("available", false) == true:
 		model = str(data.get("model", model))
+		_scene_interval_ms = (clampi(int(data.get("request_interval_seconds", 65)), 1, 300) + 1) * 1000
+		if int(data.get("next_request_after", 0)) > 0:
+			_next_request_at_ms = maxi(_next_request_at_ms, Time.get_ticks_msec() + (int(data["next_request_after"]) + 1) * 1000)
 		_status = "Luna · live" if data.get("verified_inference", false) == true else "Luna · ready for first scene"
 		_set_available(true)
 		_process_next()
@@ -149,6 +164,11 @@ static func _parse_json(value: String) -> Variant:
 func _failure_status(code: int, data: Variant) -> String:
 	var state := ""
 	if data is Dictionary:
+		var reason := str(data.get("code", ""))
+		if reason == "local_hour_budget":
+			return "Demo · office hourly limit (not OpenAI quota)"
+		if reason == "local_minute_budget" or reason == "local_scene_pacing":
+			return "Demo · office pacing the next Luna scene"
 		state = str(data.get("status", data.get("error", "")))
 	if code == 401 or code == 403 or "auth" in state or "sign" in state:
 		return "Demo · sign in to enable Luna"
@@ -159,7 +179,7 @@ func _failure_status(code: int, data: Variant) -> String:
 
 func _retry_seconds(data: Variant) -> int:
 	if data is Dictionary:
-		return clampi(int(data.get("retry_after", 30)), 15, 300)
+		return clampi(int(data.get("retry_after", 30)), 15, 3600)
 	return 30
 
 
@@ -187,6 +207,9 @@ func _set_available(value: bool) -> void:
 
 
 func drain_queue() -> void:
+	if _pace_timer:
+		_pace_timer.stop()
+	_next_request_at_ms = 0
 	if _http:
 		_http.cancel_request()
 	if _health_http:

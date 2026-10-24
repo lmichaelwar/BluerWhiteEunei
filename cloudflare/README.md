@@ -49,6 +49,8 @@ Personal deployment verified on 2026-10-24: local consent, protected credential 
 
 ## Connect ChatGPT plan usage
 
+The personal office keeps its 60-request rolling hourly cap and spaces generated scenes at least 65 seconds apart. Health distinguishes `local_limit` (the office's own pacing/budget) from `quota` (an upstream ChatGPT plan limit), with `retry_after` for automatic recovery. Waiting actors can use their rules while the next generated scene is scheduled; neither reloads nor another tab bypass the durable server limits.
+
 Keep using the original local helper on the computer whose browser will complete consent:
 
 ```sh

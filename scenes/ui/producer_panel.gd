@@ -9,6 +9,7 @@ extends BasePanel
 var _agent: Node2D = null
 
 var _subject: Label
+var _subject_picker: OptionButton
 var _result: Label
 var _answer: Label
 var _question: LineEdit
@@ -25,6 +26,9 @@ func _ready() -> void:
 
 	EventBus.agent_selected.connect(_on_agent_selected)
 	EventBus.agent_deselected.connect(_on_agent_deselected)
+	EventBus.agent_spawned.connect(func(_a: Node2D) -> void: _refresh_subject())
+	EventBus.agent_removed.connect(func(_name: String) -> void: call_deferred("_refresh_subject"))
+	EventBus.agent_died.connect(func(_name: String, _cause: String) -> void: _refresh_subject())
 	EventBus.nudge_answered.connect(_on_nudge_answered)
 	EventBus.interview_answered.connect(_on_interview_answered)
 	EventBus.rumor_planted.connect(_on_rumor_planted)
@@ -50,6 +54,17 @@ func _build_ui() -> void:
 	var outer := VBoxContainer.new()
 	outer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(outer)
+
+	var character_label := Label.new()
+	character_label.text = "Character"
+	outer.add_child(character_label)
+	_subject_picker = OptionButton.new()
+	_subject_picker.name = "CharacterPicker"
+	_subject_picker.clip_text = true
+	_subject_picker.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_subject_picker.tooltip_text = "Choose who to direct, or click them in the office."
+	_subject_picker.item_selected.connect(_on_subject_picked)
+	outer.add_child(_subject_picker)
 
 	_subject = Label.new()
 	_subject.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -276,11 +291,42 @@ func _on_agent_deselected() -> void:
 
 
 func _refresh_subject() -> void:
-	if _agent and is_instance_valid(_agent):
+	if is_instance_valid(_agent) and not _agent.is_dead:
 		_subject.text = "Directing: %s" % _agent.agent_name
 	else:
-		_subject.text = "No one selected — click an agent."
+		_agent = null
+		_subject.text = "Choose a character above or click them in the office."
+	_rebuild_subject_picker()
 	_rebuild_rumor_targets()
+
+
+func _rebuild_subject_picker() -> void:
+	if _subject_picker == null:
+		return
+	_subject_picker.clear()
+	_subject_picker.add_item("Choose a character…")
+	_subject_picker.set_item_metadata(0, null)
+	_subject_picker.select(0)
+	for actor in AgentManager.agents:
+		if not is_instance_valid(actor) or actor.is_dead:
+			continue
+		var index := _subject_picker.item_count
+		_subject_picker.add_item(actor.agent_name)
+		_subject_picker.set_item_metadata(index, weakref(actor))
+		if actor == _agent:
+			_subject_picker.select(index)
+	_subject_picker.disabled = _subject_picker.item_count == 1
+	if _subject_picker.disabled:
+		_subject_picker.set_item_text(0, "No characters available")
+
+
+func _on_subject_picked(index: int) -> void:
+	var reference: Variant = _subject_picker.get_item_metadata(index)
+	var actor: Variant = reference.get_ref() if reference is WeakRef else null
+	if is_instance_valid(actor) and not actor.is_dead:
+		EventBus.agent_selected.emit(actor)
+	else:
+		EventBus.agent_deselected.emit()
 
 
 func _rebuild_rumor_targets() -> void:

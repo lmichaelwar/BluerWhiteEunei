@@ -19,7 +19,8 @@
   "vars": {
     "EUNNEI_MODEL": "gpt-6-luna",
     "EUNNEI_REQUESTS_PER_MINUTE": "6",
-    "EUNNEI_REQUESTS_PER_HOUR": "60"
+    "EUNNEI_REQUESTS_PER_HOUR": "60",
+    "EUNNEI_MIN_REQUEST_INTERVAL_SECONDS": "65"
   },
   "observability": { "enabled": false }
 }

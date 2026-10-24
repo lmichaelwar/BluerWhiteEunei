@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3 uid="uid://cagent001"]
+[gd_scene load_steps=10 format=3 uid="uid://cagent001"]
 
 [ext_resource type="Script" path="res://scenes/agents/agent.gd" id="1_agent"]
 [ext_resource type="Script" path="res://scenes/agents/agent_needs.gd" id="2_needs"]
@@ -12,6 +12,9 @@ radius = 6.0
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_interact"]
 radius = 200.0
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_click"]
+size = Vector2(20, 28)
 
 [node name="Agent" type="CharacterBody2D"]
 collision_layer = 2
@@ -51,6 +54,7 @@ script = ExtResource("5_memory")
 script = ExtResource("6_relationships")
 
 [node name="NameLabel" type="Label" parent="."]
+mouse_filter = 2
 offset_left = -20.0
 offset_top = -20.0
 offset_right = 20.0
@@ -64,6 +68,7 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="ThoughtBubble" type="Label" parent="."]
+mouse_filter = 2
 visible = false
 offset_left = -50.0
 offset_top = -36.0
@@ -79,6 +84,7 @@ vertical_alignment = 1
 autowrap_mode = 2
 
 [node name="SpeechBubble" type="Label" parent="."]
+mouse_filter = 2
 visible = false
 offset_left = -70.0
 offset_top = -52.0
@@ -94,6 +100,7 @@ vertical_alignment = 1
 autowrap_mode = 2
 
 [node name="EmotionIndicator" type="Label" parent="."]
+mouse_filter = 2
 visible = false
 offset_left = -12.0
 offset_top = -30.0
@@ -107,11 +114,11 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="ClickArea" type="Area2D" parent="."]
-collision_layer = 0
+collision_layer = 2
 collision_mask = 0
 input_pickable = true
 
 [node name="ClickShape" type="CollisionShape2D" parent="ClickArea"]
-shape = SubResource("CircleShape2D_body")
+shape = SubResource("RectangleShape2D_click")
 
 [connection signal="input_event" from="ClickArea" to="." method="_on_input_event"]

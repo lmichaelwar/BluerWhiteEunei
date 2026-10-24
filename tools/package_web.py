@@ -83,6 +83,7 @@ if html.count(marker) != 1:
     raise SystemExit('Expected the Godot index.js loader exactly once in index.html')
 (office / 'index.html').write_text(html.replace(marker, '<script src="wasm-chunks.js"></script>\n\t\t' + marker))
 shutil.copyfile(pathlib.Path(__file__).resolve().parents[1] / 'web/index.html', out / 'index.html')
+shutil.copyfile(pathlib.Path(__file__).resolve().parents[1] / 'web/status.mjs', out / 'status.mjs')
 print(f'Packaged {out}')
 for name, entry in manifest.items():
     print(f'{name}: {len(entry["parts"])} chunks, SHA-256 {entry["sha256"]}')

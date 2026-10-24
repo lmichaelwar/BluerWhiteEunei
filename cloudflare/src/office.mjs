@@ -112,6 +112,8 @@ export class OfficeSessionCore {
     this.model = env.EUNNEI_MODEL || 'gpt-6-luna';
     this.perMinute = budget(env.EUNNEI_REQUESTS_PER_MINUTE, 6, 60);
     this.perHour = budget(env.EUNNEI_REQUESTS_PER_HOUR, 60, 3600);
+    this.intervalSeconds = Number(env.EUNNEI_MIN_REQUEST_INTERVAL_SECONDS || 0);
+    if (!Number.isInteger(this.intervalSeconds) || this.intervalSeconds < 0 || this.intervalSeconds > 300) throw new Error('Invalid scene interval');
     this.store = new DurableTokenStore(ctx.storage, { fetchImpl, now });
     this.client = client || new InferenceClient(this.store, { fetchImpl, model: this.model });
     this.busy = false; this.importing = false; this.catalog = null; this.catalogUntil = 0; this.catalogPromise = null;
@@ -144,6 +146,10 @@ export class OfficeSessionCore {
     if (minute.length >= this.perMinute) return new BridgeError('local_minute_budget', 'The office is resting until its minute quota resets', 429, Math.max(1, Math.ceil((minute[0] + 60_000 - this.now()) / 1000)));
     return null;
   }
+  nextSceneSeconds() {
+    const last = this.state.calls.at(-1);
+    return last === undefined ? 0 : Math.max(0, Math.ceil((last + this.intervalSeconds * 1000 - this.now()) / 1000));
+  }
   assertIdle() {
     if (this.busy || this.importing || this.state.leaseUntil > this.now()) throw new BridgeError('busy', 'Another scene is being generated; retry when it completes', 409);
   }
@@ -170,6 +176,7 @@ export class OfficeSessionCore {
       available: !error, model: this.model, status: error ? this.errorStatus(error) : this.state.successes ? 'ready' : 'model_verified',
       credential_present: connection.connected, verified_inference: this.state.successes > 0,
       successful_requests: this.state.successes, billing: 'chatgpt_plan',
+      request_interval_seconds: this.intervalSeconds, next_request_after: this.nextSceneSeconds(),
       error: error?.message || null, code: error?.code || null, retry_after: this.blockError()?.retryAfter || error?.retryAfter || null,
     });
   }
@@ -195,6 +202,8 @@ export class OfficeSessionCore {
     this.assertIdle();
     const pacing = this.pacingError();
     if (pacing) throw pacing;
+    const wait = this.nextSceneSeconds();
+    if (wait) throw new BridgeError('local_scene_pacing', 'The next Luna scene is being paced by the office', 429, wait);
     this.busy = true;
     // Survives an isolate restart even if a catalog lookup and an upstream
     // request were both pending. Normal completion releases this immediately.
@@ -218,7 +227,7 @@ export class OfficeSessionCore {
       this.busy = false;
     }
   }
-  errorStatus(error) { return error.status === 429 ? 'quota' : [401, 403].includes(error.status) ? 'auth_required' : 'offline'; }
+  errorStatus(error) { return error.code.startsWith('local_') && error.status === 429 ? 'local_limit' : error.status === 429 ? 'quota' : [401, 403].includes(error.status) ? 'auth_required' : 'offline'; }
   async fetch(request) {
     await this.ready;
     try {

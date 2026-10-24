@@ -129,6 +129,32 @@ test('late upstream quota failure discards text and persists cooldown across res
   assert.equal((await restarted.fetch(request('/api/resume', {}))).status, 429);
 });
 
+test('scene cadence survives restart without treating healthy plan access as quota exhaustion', async () => {
+  let clock = 100_000;
+  const storage = new FakeStorage(); await storage.put('credentials', tokenRecord);
+  const env = { EUNNEI_MIN_REQUEST_INTERVAL_SECONDS: 65 };
+  const first = await core(storage, { now: () => clock }, env);
+  assert.equal((await first.fetch(request('/api/chat', chatBody))).status, 200);
+  const next = await core(storage, { now: () => clock }, env);
+  const health = await (await next.fetch(request('/api/health'))).json();
+  assert.equal(health.available, true); assert.equal(health.next_request_after, 65);
+  const paused = await next.fetch(request('/api/chat', chatBody));
+  assert.equal(paused.status, 429);
+  assert.deepEqual(await paused.json(), { available: false, error: 'The next Luna scene is being paced by the office', code: 'local_scene_pacing', status: 'local_limit', paused: false, retry_after: 65 });
+  assert.equal(next.state.calls.length, 1);
+  clock += 65_000;
+  assert.equal((await next.fetch(request('/api/chat', chatBody))).status, 200);
+});
+
+test('hourly office limit is labeled separately from the upstream plan quota', async () => {
+  const storage = new FakeStorage(); await storage.put('credentials', tokenRecord);
+  const instance = await core(storage, {}, { EUNNEI_REQUESTS_PER_HOUR: 1 });
+  await instance.fetch(request('/api/chat', chatBody));
+  const health = await (await instance.fetch(request('/api/health'))).json();
+  assert.equal(health.status, 'local_limit'); assert.equal(health.code, 'local_hour_budget');
+  assert.equal(health.retry_after, 3600);
+});
+
 test('import cannot race an in-flight refresh and overwrite its replacement token', async () => {
   const storage = new FakeStorage(); await storage.put('credentials', { ...tokenRecord, expires_at: 1 });
   let finish, entered;
