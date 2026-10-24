@@ -45,7 +45,7 @@ npx wrangler secret put ADMIN_KEY
 npx wrangler deploy
 ```
 
-These are deployment instructions, not evidence of a completed deployment. The app must remain unavailable to unauthenticated requests even before credentials are imported.
+Personal deployment verified on 2026-10-24: local consent, protected credential import, model discovery, and one completed Luna response through the Worker. Health reported `ready`, `verified_inference:true`, and `billing:chatgpt_plan`. Anonymous requests to the app, API, and a WebAssembly chunk redirected to Cloudflare Access. The app must remain unavailable to unauthenticated requests even before credentials are imported.
 
 ## Connect ChatGPT plan usage
 

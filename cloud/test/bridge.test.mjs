@@ -64,11 +64,12 @@ test('code exchange uses issued client, rejects scope absence and invalid state'
   await assert.rejects(exchangeCode({ attempt, callback, fetchImpl: missingScope }), { code: 'plan_not_enabled' });
 });
 
-test('protected storage preserves a stable host and owner-only token permissions', async t => {
+test('protected storage preserves a stable host and Unix owner-only mode', async t => {
   const dir = await tempStore(t);
   assert.equal(await hostId(dir), await hostId(dir));
   await writeJSON(join(dir, 'credentials.json'), goodTokenRecord);
-  assert.equal((await stat(join(dir, 'credentials.json'))).mode & 0o777, 0o600);
+  if (process.platform === 'win32') t.diagnostic('Windows protection uses the parent directory DACL, verified separately; POSIX mode bits do not represent Windows ACLs.');
+  else assert.equal((await stat(join(dir, 'credentials.json'))).mode & 0o777, 0o600);
 });
 
 test('concurrent refreshes rotate once and atomically retain replacement token', async t => {

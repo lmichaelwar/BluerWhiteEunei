@@ -2,7 +2,7 @@
 
 Small, dependency-free Node bridge for Aphae's office aquarium. It translates the existing Ollama chat contract into OpenAI Responses requests using **ChatGPT plan usage through Sign in with ChatGPT**. Default model: `gpt-6-luna`. It never reads Codex's credentials or an API key and has no paid API fallback.
 
-Built and tested with mocked OAuth and inference. **Live consent, this account's Luna access, and a completed Luna response remain unverified.** A stored credential alone does not make the office show as connected.
+Local consent, Cloudflare credential import, Luna model access, and a completed Luna response were verified on 2026-10-24. The test suite uses synthetic credentials. A stored credential alone does not make the office show as connected.
 
 ## Hosting decision and eligibility
 
@@ -42,6 +42,8 @@ npm run auth
 The helper prints and opens a local page at `http://127.0.0.1:1455/` with a **Continue with ChatGPT** button. If no window appears, open that address manually in a browser on the same computer. Running the helper through SSH does not guarantee a visible browser window. The page expires after ten minutes; restart the helper if it expires.
 
 It generates fresh state, nonce and PKCE; performs dynamic registration; validates the signed ID token, issuer, audience, nonce, expiry and granted plan scope; then saves owner-only credentials in `~/.config/eunnei/credentials.json`. It does not run inference. Override the protected directory with `EUNNEI_DATA_DIR`; override the local callback port with `EUNNEI_AUTH_PORT` if 1455 is occupied.
+
+On Windows, set `EUNNEI_DATA_DIR` inside a directory whose DACL restricts access to your account and SYSTEM. Unix file-mode checks do not establish Windows access permissions.
 
 Use an SSH channel to transfer **only this helper's credential record** to the personal VM. Keep it outside the repository, image build context, static files, logs and chat. Do not transfer the laptop's `host.json`. On the VM, import it:
 
