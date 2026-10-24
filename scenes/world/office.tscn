@@ -84,14 +84,27 @@ shape = SubResource("couch_shape")
 [node name="Agents" type="Node2D" parent="."]
 y_sort_enabled = true
 
-[node name="Alice" parent="Agents" instance=ExtResource("5_agent")]
-position = Vector2(90, 120)
-personality_file = "alice"
 
-[node name="Bob" parent="Agents" instance=ExtResource("5_agent")]
-position = Vector2(160, 130)
-personality_file = "bob"
+[node name="MaraVell" parent="Agents" instance=ExtResource("5_agent")]
+position = Vector2(65, 110)
+personality_file = "eunnei_mara"
 
-[node name="Clara" parent="Agents" instance=ExtResource("5_agent")]
-position = Vector2(240, 110)
-personality_file = "clara"
+[node name="IvoSplice" parent="Agents" instance=ExtResource("5_agent")]
+position = Vector2(115, 120)
+personality_file = "eunnei_ivo"
+
+[node name="CelesteVale" parent="Agents" instance=ExtResource("5_agent")]
+position = Vector2(170, 105)
+personality_file = "eunnei_celeste"
+
+[node name="BasilMorrow" parent="Agents" instance=ExtResource("5_agent")]
+position = Vector2(205, 125)
+personality_file = "eunnei_basil"
+
+[node name="VeraQuell" parent="Agents" instance=ExtResource("5_agent")]
+position = Vector2(145, 70)
+personality_file = "eunnei_vera"
+
+[node name="LeonRusk" parent="Agents" instance=ExtResource("5_agent")]
+position = Vector2(50, 65)
+personality_file = "eunnei_leon"

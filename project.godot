@@ -14,8 +14,8 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 
 [application]
 
-config/name="Aphae"
-config/description="AI Agent Office Simulation"
+config/name="A Bluer White Eunnei"
+config/description="A surreal office aquarium. Development is proceeding."
 run/main_scene="res://scenes/ui/main_menu.tscn"
 config/features=PackedStringArray("4.6", "Forward Plus")
 config/icon="res://icon.svg"

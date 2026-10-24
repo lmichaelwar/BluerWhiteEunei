@@ -1,96 +1,32 @@
-name: web-demo
-
-# Builds the no-threads web export and publishes it to GitHub Pages —
-# a play-it-in-your-browser link that updates on every push to main.
-# No-threads sidesteps the SharedArrayBuffer/COOP/COEP problem entirely,
-# so plain Pages hosting works with no service-worker shims.
-
+name: private-web-build
+# Explicit build only. This personal mod does not publish to GitHub Pages.
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
-
 permissions:
   contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: true
-
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    env:
-      GODOT_VERSION: "4.6"
     steps:
       - uses: actions/checkout@v4
-
-      - name: Cache Godot + export templates
-        id: cache-godot
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/godot-bin
-            ~/.local/share/godot/export_templates
-          key: godot-export-${{ env.GODOT_VERSION }}-stable
-
-      - name: Download Godot and templates
-        if: steps.cache-godot.outputs.cache-hit != 'true'
+      - name: Install Godot 4.6 and web templates
         run: |
-          mkdir -p ~/godot-bin
-          curl -sSL -o /tmp/godot.zip \
-            "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
-          unzip -q /tmp/godot.zip -d ~/godot-bin
-          mv ~/godot-bin/Godot_v${GODOT_VERSION}-stable_linux.x86_64 ~/godot-bin/godot
-          chmod +x ~/godot-bin/godot
-          curl -sSL -o /tmp/templates.tpz \
-            "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
-          mkdir -p ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
-          unzip -q /tmp/templates.tpz -d /tmp/templates
-          mv /tmp/templates/templates/* ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable/
-
-      - name: Export Web
+          mkdir -p /tmp/godot ~/.local/share/godot/export_templates/4.6.stable
+          curl --fail -L -o /tmp/godot.zip https://github.com/godotengine/godot/releases/download/4.6-stable/Godot_v4.6-stable_linux.x86_64.zip
+          unzip -q /tmp/godot.zip -d /tmp/godot
+          curl --fail -L -o /tmp/templates.tpz https://github.com/godotengine/godot/releases/download/4.6-stable/Godot_v4.6-stable_export_templates.tpz
+          unzip -q /tmp/templates.tpz 'templates/web*' -d /tmp/templates
+          cp /tmp/templates/templates/web* ~/.local/share/godot/export_templates/4.6.stable/
+      - name: Import, export, and package
         run: |
-          ~/godot-bin/godot --headless --path . --audio-driver Dummy --import || true
+          GODOT=/tmp/godot/Godot_v4.6-stable_linux.x86_64
+          "$GODOT" --headless --path . --editor --import
           mkdir -p build/web
-          ~/godot-bin/godot --headless --path . --audio-driver Dummy \
-            --export-release "Web" build/web/index.html
-
-      - name: Configure Pages
-        uses: actions/configure-pages@v5
+          "$GODOT" --headless --path . --export-release Web build/web/index.html
+          python3 tools/package_web.py build/web build/site
+      - uses: actions/upload-artifact@v4
         with:
-          enablement: true
-
-      - name: Upload site
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: build/web
-
-      - name: Deploy
-        id: deployment
-        uses: actions/deploy-pages@v4
-
-      # itch.io mirror (Roadmap Track C): the same web build, pushed via
-      # butler. Scaffolding until the owner creates the itch project and adds
-      # the BUTLER_API_KEY repo secret — until then this step skips cleanly
-      # and says so. Setup checklist: docs/ITCH.md.
-      - name: Mirror to itch.io
-        env:
-          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
-          ITCH_TARGET: ${{ vars.ITCH_TARGET }}
-        run: |
-          if [ -z "$BUTLER_API_KEY" ]; then
-            echo "BUTLER_API_KEY secret not set — skipping the itch.io mirror (see docs/ITCH.md to enable)"
-            exit 0
-          fi
-          curl -sSL -o /tmp/butler.zip "https://broth.itch.zone/butler/linux-amd64/LATEST/archive/default"
-          unzip -q /tmp/butler.zip -d /tmp/butler
-          chmod +x /tmp/butler/butler
-          /tmp/butler/butler push build/web "${ITCH_TARGET:-rsanandres/aphae}:web" \
-            --userversion "${GITHUB_SHA::8}"
+          name: eunnei-web
+          path: build/site
+          retention-days: 7

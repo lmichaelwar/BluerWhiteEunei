@@ -1,3 +1,34 @@
+# A Bluer White Eunnei
+
+A personal surreal office aquarium, adapted from [Aphae](https://github.com/rsanandres/aphae). Six adults confidently develop a product whose definition nobody shares. One is certain it is software.
+
+The story is the priority. The existing Godot office, relationships, memories, gossip and confessionals remain the machinery. The new cast and recurring incidents supply the premise. Aquarium mode resolves producer dilemmas automatically so watching does not become another job.
+
+## Current run modes
+
+- **Rule-based preview:** the office can run without Ollama or an OpenAI connection. The HUD explicitly says DEMO. This is not live Luna output.
+- **Luna:** a separate personal cloud bridge uses authorized ChatGPT plan usage through the documented Sign in with ChatGPT flow. The HUD says LUNA only after the bridge reports an authorized model connection. No automatic paid-API fallback.
+- The browser must support WebGL2. The simulation runs in the browser tab; closing it does not continue the office on a server. Saves retain state for the next session.
+
+## Run and build
+
+Godot 4.6 is required for development. Open `project.godot`, or export the single-threaded Web preset:
+
+```sh
+godot --headless --editor --import
+mkdir -p build/web
+godot --headless --export-release Web build/web/index.html
+python3 tools/package_web.py build/web build/site
+```
+
+Serve `build/site` for the browser version. See `cloud/README.md` for the personal server and one-time subscription authorization, and `docs/story-bible.md` for the cast. Private Sites can serve the preview; ordinary Sites identity sign-in does not authorize ChatGPT model usage.
+
+Do not put tokens, passwords, saved playthroughs or credential files in Git. Upstream's code retains its original rights notice below; this modification does not relicense Aphae. The original cloud bridge has its own license.
+
+---
+
+## Upstream documentation
+
 # Aphae
 
 [![tests](https://github.com/rsanandres/aphae/actions/workflows/ci.yml/badge.svg)](https://github.com/rsanandres/aphae/actions/workflows/ci.yml)

@@ -184,6 +184,8 @@ func _request_llm(kind: String, event_text: String, speaker: Node2D) -> void:
 
 	var prompt := PromptBuilder.build("confessional", {
 		"name": speaker.agent_name,
+		"private_context": EunneiStory.private_brief(profile),
+		"memories": EunneiStory.memories_for(speaker, event_text),
 		"personality": profile.get_personality_summary(),
 		"speech_style": profile.speech_style if profile.speech_style != "" else "casual",
 		"quirks_line": quirks_line,

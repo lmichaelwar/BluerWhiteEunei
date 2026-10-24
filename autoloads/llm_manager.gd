@@ -1,6 +1,6 @@
 extends Node
 ## Async LLM inference manager with backend abstraction.
-## Tries: bundled (GDLlama) → Ollama → heuristic fallback.
+## Private cloud by default; local backends remain optional.
 
 signal ollama_status_changed(available: bool)
 signal active_backend_changed(backend_name: String)
@@ -13,16 +13,23 @@ enum Priority { LOW = 0, NORMAL = 1, HIGH = 2 }
 var is_available: bool = false
 var active_backend_name: String = "none"
 
+var _cloud_backend: LLMBackendCloud = null
 var _bundled_backend: LLMBackendBundled = null
 var _ollama_backend: LLMBackendOllama = null
 var _active_backend: Node = null  # Current backend in use
 var _health_timer: float = 0.0
 
 
-var _preferred_backend: String = "auto"  # "auto", "bundled", "ollama", "heuristic"
+var _preferred_backend: String = "cloud"
 
 
 func _ready() -> void:
+	_cloud_backend = LLMBackendCloud.new()
+	_cloud_backend.name = "CloudBackend"
+	add_child(_cloud_backend)
+	_cloud_backend.status_changed.connect(_on_cloud_status_changed)
+	_cloud_backend.configure({"url": SettingsManager.cloud_url, "model": SettingsManager.cloud_model})
+
 	# Create bundled backend
 	_bundled_backend = LLMBackendBundled.new()
 	_bundled_backend.name = "BundledBackend"
@@ -53,7 +60,9 @@ func _ready() -> void:
 	SettingsManager.settings_changed.connect(_on_settings_changed)
 
 	# Try to load bundled model (unless user explicitly chose ollama/heuristic)
-	if _preferred_backend == "heuristic":
+	if _preferred_backend == "cloud":
+		_cloud_backend.check_health()
+	elif _preferred_backend == "heuristic":
 		# Skip all LLM backends, stay offline (heuristic fallback in AgentBrain)
 		print("[LLMManager] Backend preference: heuristic — skipping LLM backends")
 	elif _preferred_backend == "ollama":
@@ -98,6 +107,10 @@ func get_queue_size() -> int:
 
 
 func get_status_text() -> String:
+	if _preferred_backend == "cloud":
+		return _cloud_backend.get_status_text()
+	if _preferred_backend == "heuristic":
+		return "Demo · rule-based cast"
 	if _active_backend and _active_backend.has_method("get_status_text"):
 		return _active_backend.get_status_text()
 	if not is_available:
@@ -121,11 +134,17 @@ func configure_ollama(url: String, model_name: String) -> void:
 
 
 func _check_backends() -> void:
-	if not _bundled_backend.is_available:
+	if _preferred_backend == "cloud":
+		_cloud_backend.check_health()
+		return
+	if _preferred_backend == "heuristic":
+		return
+	if _preferred_backend != "ollama" and not _bundled_backend.is_available:
 		var bundled_path := _get_bundled_model_path()
 		if bundled_path != "" and not _bundled_backend._is_loading:
 			_bundled_backend.load_model(bundled_path)
-	_ollama_backend.check_health()
+	if _preferred_backend != "bundled":
+		_ollama_backend.check_health()
 
 
 func _update_active_backend() -> void:
@@ -133,7 +152,11 @@ func _update_active_backend() -> void:
 	var old_name := active_backend_name
 
 	# Respect user backend preference
-	if _preferred_backend == "heuristic":
+	if _preferred_backend == "cloud":
+		_active_backend = _cloud_backend if _cloud_backend.is_available else null
+		active_backend_name = "cloud" if _cloud_backend.is_available else "demo"
+		is_available = _cloud_backend.is_available
+	elif _preferred_backend == "heuristic":
 		# User wants heuristic only — no LLM backend
 		_active_backend = null
 		active_backend_name = "heuristic"
@@ -181,6 +204,10 @@ func _update_active_backend() -> void:
 			print("[LLMManager] Active backend: %s" % active_backend_name)
 
 
+func _on_cloud_status_changed(_available: bool) -> void:
+	_update_active_backend()
+
+
 func _on_bundled_status_changed(available: bool) -> void:
 	model_loading.emit(false)
 	if available:
@@ -197,8 +224,14 @@ func _on_settings_changed() -> void:
 	var new_model: String = SettingsManager.ollama_model
 	var new_backend: String = SettingsManager.llm_backend
 
+	if _preferred_backend != new_backend and _active_backend and _active_backend.has_method("drain_queue"):
+		_active_backend.drain_queue()
 	_preferred_backend = new_backend
-	configure_ollama(new_url, new_model)
+	_cloud_backend.configure({"url": SettingsManager.cloud_url, "model": SettingsManager.cloud_model})
+	if new_backend == "cloud":
+		_cloud_backend.check_health()
+	elif new_backend != "heuristic":
+		configure_ollama(new_url, new_model)
 	_update_active_backend()
 
 

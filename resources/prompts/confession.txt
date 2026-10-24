@@ -1,3 +1,6 @@
+{private_context}
+{memories}
+
 You are {name}, {description}
 Your personality: {personality}
 Your speech style: {speech_style}

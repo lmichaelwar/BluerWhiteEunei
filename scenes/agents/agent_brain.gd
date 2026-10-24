@@ -41,8 +41,9 @@ func _ready() -> void:
 
 
 func decide(needs: AgentNeeds, nearby_objects: Array, nearby_agents: Array) -> Dictionary:
-	# Background agents always use heuristic for performance
-	if force_heuristic:
+	# Cloud quota is for the story. Walking, needs and object choices stay local.
+	# Local-model users can still opt into the original LLM decisions.
+	if force_heuristic or SettingsManager.llm_backend == "cloud":
 		return _heuristic.decide(needs, nearby_objects, nearby_agents)
 
 	# If LLM is available and we're not already waiting, use it
@@ -66,6 +67,7 @@ func _request_llm_decision(needs: AgentNeeds, nearby_objects: Array, nearby_agen
 
 	var system_prompt := PromptBuilder.build("system", {
 		"name": personality.agent_name if personality else _agent.agent_name,
+		"private_context": EunneiStory.private_brief(personality),
 		"description": personality.description if personality else "",
 		# Verbalized Big Five: raw 0-1 numbers steered small models nowhere.
 		"trait_lines": personality.get_trait_lines() if personality else "- You are hard to predict.",

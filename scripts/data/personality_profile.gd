@@ -17,6 +17,8 @@ var goals: Array[String] = []
 var quirks: Array[String] = []
 var speech_style: String = ""
 var backstory: String = ""
+# Actor-only convictions and vulnerabilities; never put this in public description.
+var private_context: String = ""
 # Optional few-shot lines in this character's register, for prompts. Empty
 # for procedural agents — the voice block simply drops out of the template.
 var voice_lines: Array[String] = []
@@ -40,6 +42,7 @@ static func load_from_json(path: String) -> PersonalityProfile:
 	profile.agent_name = data.get("name", "Unknown")
 	profile.description = data.get("description", "")
 	profile.backstory = data.get("backstory", "")
+	profile.private_context = data.get("private_context", "")
 	profile.speech_style = data.get("speech_style", "")
 
 	# Saves and JSON are untrusted here: a truncated or hand-edited file with
@@ -77,6 +80,7 @@ func to_dict() -> Dictionary:
 		"name": agent_name,
 		"description": description,
 		"backstory": backstory,
+		"private_context": private_context,
 		"speech_style": speech_style,
 		"color": [color.r, color.g, color.b],
 		"big_five": {
@@ -98,6 +102,7 @@ static func from_dict(data: Dictionary) -> PersonalityProfile:
 	profile.agent_name = data.get("name", "Unknown")
 	profile.description = data.get("description", "")
 	profile.backstory = data.get("backstory", "")
+	profile.private_context = data.get("private_context", "")
 	profile.speech_style = data.get("speech_style", "")
 
 	# Saves and JSON are untrusted here: a truncated or hand-edited file with

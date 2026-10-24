@@ -1,0 +1,14 @@
+{
+  "name": "eunnei-cloud-bridge",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "start": "node src/server.mjs",
+    "auth": "node src/auth.mjs",
+    "import-auth": "node src/import-auth.mjs",
+    "test": "node --test test/*.test.mjs"
+  }
+}

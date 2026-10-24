@@ -30,6 +30,7 @@ func _ready() -> void:
 	add_child(_broadcast_overlay)
 	EventBus.broadcast_cut.connect(func() -> void: _broadcast_overlay.flash())
 
+	EventManager.auto_resolve_dilemmas = true
 	EventBus.game_ready.emit()
 
 	# Fade in from menu
@@ -73,6 +74,7 @@ func _ready() -> void:
 	if not fresh_sandbox:
 		call_deferred("_try_load_save")
 	SaveManager.skip_auto_load = false
+	_setup_aquarium_autosave()
 
 	# The premiere: on a brand-new sandbox an authored first session runs —
 	# cast intros to camera, a seeded secret admitted to the booth by
@@ -82,6 +84,20 @@ func _ready() -> void:
 		var premiere := PremiereDirector.new()
 		add_child(premiere)
 		call_deferred("_start_premiere", premiere)
+
+
+func _setup_aquarium_autosave() -> void:
+	# This timer belongs to the running office, never the title screen. Keep
+	# the active slot and its backup; do not touch the other manual slots.
+	var autosave := Timer.new()
+	autosave.name = "AquariumAutosave"
+	autosave.wait_time = 60.0
+	autosave.autostart = true
+	autosave.timeout.connect(func() -> void:
+		if not AgentManager.agents.is_empty():
+			SaveManager.save_game()
+	)
+	add_child(autosave)
 
 
 func _start_premiere(premiere: PremiereDirector) -> void:

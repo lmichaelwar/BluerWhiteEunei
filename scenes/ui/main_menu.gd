@@ -46,7 +46,7 @@ func _ready() -> void:
 
 	# Title with shadow
 	_title_label = Label.new()
-	_title_label.text = "APHAE"
+	_title_label.text = "EUNNEI"
 	_title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_title_label.add_theme_font_size_override("font_size", 32)
 	_title_label.add_theme_color_override("font_color", Color(0.95, 0.9, 0.75))
@@ -57,7 +57,7 @@ func _ready() -> void:
 
 	# Subtitle
 	_subtitle_label = Label.new()
-	_subtitle_label.text = "Produce the show. The cast is alive."
+	_subtitle_label.text = "DEVELOPMENT IS PROCEEDING."
 	_subtitle_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_subtitle_label.add_theme_font_size_override("font_size", 9)
 	_subtitle_label.add_theme_color_override("font_color", Color(0.65, 0.65, 0.72))
@@ -73,7 +73,7 @@ func _ready() -> void:
 	_button_container.add_theme_constant_override("separation", 4)
 	vbox.add_child(_button_container)
 
-	_add_button("New Sandbox", _on_new_sandbox)
+	_add_button("Watch a new office", _on_new_sandbox)
 	if SaveManager.has_save():
 		_add_button("Continue", _on_continue)
 	_add_button("Settings", _on_settings)

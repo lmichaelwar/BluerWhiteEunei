@@ -1,5 +1,262 @@
 [
   {
+    "id": "eunnei_white_review",
+    "name": "The White Review",
+    "description": "The White Review begins. Today, the absence of blue must be justified in writing.",
+    "probability": 0.14,
+    "category": "work",
+    "target_mode": "global",
+    "duration_minutes": 30,
+    "cooldown_days": 1,
+    "need_effects": {
+      "productivity": -4,
+      "social": 5
+    },
+    "memory": {
+      "affected": {
+        "text": "attended the White Review. The posted requirement says the absence of blue needs written justification. No product definition was provided.",
+        "importance": 6,
+        "emotion": "candid",
+        "sentiment": 0.0,
+        "thread": "eunnei_project",
+        "protected": true
+      }
+    }
+  },
+  {
+    "id": "eunnei_anniversary",
+    "name": "An Unassigned Anniversary",
+    "description": "An unsigned anniversary card addressed to Eunnei is passed around the office. Nobody claims authorship.",
+    "probability": 0.08,
+    "category": "social",
+    "target_mode": "global",
+    "duration_minutes": 0,
+    "cooldown_days": 3,
+    "memory": {
+      "affected": {
+        "text": "saw an unsigned anniversary card addressed to Eunnei. The sender, occasion and intended recipient are unknown. Do not treat the card as proof of a marriage.",
+        "importance": 6,
+        "emotion": "curiosity",
+        "sentiment": 0.0,
+        "thread": "eunnei_project",
+        "protected": true
+      }
+    }
+  },
+  {
+    "id": "eunnei_custody",
+    "name": "Sample Custody",
+    "description": "Two colleagues dispute who is permitted to take an unlabeled sample home.",
+    "probability": 0.1,
+    "category": "social",
+    "target_mode": "random",
+    "second_actor": "nearby",
+    "duration_minutes": 15,
+    "cooldown_days": 2,
+    "relationship_effects": [
+      {
+        "from": "target",
+        "to": "second",
+        "affinity": -6,
+        "trust": -3
+      },
+      {
+        "from": "second",
+        "to": "target",
+        "affinity": -4
+      }
+    ],
+    "memory": {
+      "affected": {
+        "text": "argued with {second} over custody of an unlabeled sample. Neither established what the sample was.",
+        "importance": 6,
+        "emotion": "anger",
+        "sentiment": -0.4,
+        "thread": "eunnei_project",
+        "protected": true
+      },
+      "second": {
+        "text": "was challenged by {target} about taking an unlabeled sample home. The disagreement is real; the sample remains unidentified.",
+        "importance": 6,
+        "emotion": "resentment",
+        "sentiment": -0.3,
+        "thread": "eunnei_project",
+        "protected": true
+      },
+      "witness": {
+        "radius": 100,
+        "text": "heard {target} and {second} arguing about sample custody. Any romantic interpretation is speculation.",
+        "importance": 6,
+        "emotion": "curiosity",
+        "sentiment": 0.0,
+        "thread": "eunnei_project",
+        "protected": true
+      }
+    },
+    "narrative": {
+      "text": "{target} and {second} have made sample custody painfully personal.",
+      "importance": 6
+    }
+  },
+  {
+    "id": "eunnei_third_floor",
+    "name": "Third Floor Maintenance",
+    "description": "A maintenance ticket requests reassurance on the third floor. The building still has two floors.",
+    "probability": 0.1,
+    "category": "environment",
+    "target_mode": "random",
+    "second_actor": "random",
+    "duration_minutes": 0,
+    "cooldown_days": 2,
+    "memory": {
+      "affected": {
+        "text": "showed {second} a maintenance ticket requesting reassurance on a third floor. The ticket exists; the supposed third floor is unverified.",
+        "importance": 6,
+        "emotion": "confusion",
+        "sentiment": 0.0,
+        "thread": "eunnei_project",
+        "protected": true
+      },
+      "second": {
+        "text": "was shown a third-floor maintenance ticket by {target}. There is no verified third floor.",
+        "importance": 6,
+        "emotion": "curiosity",
+        "sentiment": 0.0,
+        "thread": "eunnei_project",
+        "protected": true
+      }
+    },
+    "relationship_effects": [
+      {
+        "from": "target",
+        "to": "second",
+        "trust": 3
+      }
+    ],
+    "narrative": {
+      "text": "{target} has asked {second} to help interpret a maintenance ticket.",
+      "importance": 5
+    }
+  },
+  {
+    "id": "eunnei_credit",
+    "name": "Duplicate Authorship",
+    "description": "Two names appear on the same blank demonstration slide. Credit is disputed immediately.",
+    "probability": 0.09,
+    "category": "work",
+    "target_mode": "random",
+    "second_actor": "rival",
+    "duration_minutes": 0,
+    "cooldown_days": 2,
+    "relationship_effects": [
+      {
+        "from": "target",
+        "to": "second",
+        "affinity": -8,
+        "add_tags": [
+          "disputed_credit"
+        ]
+      },
+      {
+        "from": "second",
+        "to": "target",
+        "trust": -5
+      }
+    ],
+    "memory": {
+      "affected": {
+        "text": "disputed credit with {second} after both names appeared on the same blank demonstration slide. The slide contains no prototype.",
+        "importance": 6,
+        "emotion": "jealousy",
+        "sentiment": -0.5,
+        "thread": "eunnei_project",
+        "protected": true
+      },
+      "second": {
+        "text": "found their name beside {target} on a blank demonstration slide and disputed the attribution.",
+        "importance": 6,
+        "emotion": "anger",
+        "sentiment": -0.4,
+        "thread": "eunnei_project",
+        "protected": true
+      }
+    },
+    "narrative": {
+      "text": "{target} and {second} are disputing authorship of a blank slide.",
+      "importance": 6
+    }
+  },
+  {
+    "id": "eunnei_tender",
+    "name": "The Unnecessary Kindness",
+    "description": "Someone quietly helps a colleague with an impossible form. Neither calls it affection.",
+    "probability": 0.1,
+    "category": "social",
+    "target_mode": "random",
+    "second_actor": "friend",
+    "duration_minutes": 0,
+    "cooldown_days": 2,
+    "relationship_effects": [
+      {
+        "from": "target",
+        "to": "second",
+        "affinity": 7,
+        "trust": 6,
+        "romantic_interest": 3
+      },
+      {
+        "from": "second",
+        "to": "target",
+        "affinity": 5
+      }
+    ],
+    "memory": {
+      "affected": {
+        "text": "received quiet help from {second} with a form asking for the prototype\u2019s next of kin. The kindness happened; its romantic meaning is uncertain.",
+        "importance": 6,
+        "emotion": "vulnerable",
+        "sentiment": 0.5,
+        "thread": "eunnei_project",
+        "protected": true
+      },
+      "second": {
+        "text": "helped {target} complete an impossible next-of-kin form without ridiculing them.",
+        "importance": 6,
+        "emotion": "candid",
+        "sentiment": 0.4,
+        "thread": "eunnei_project",
+        "protected": true
+      }
+    },
+    "narrative": {
+      "text": "{second} helped {target} with the next-of-kin field. They lingered over it.",
+      "importance": 5
+    }
+  },
+  {
+    "id": "eunnei_correction",
+    "name": "A Correction to Friday",
+    "description": "A correction arrives: Friday remains the deadline, but management has withdrawn its definition of Friday.",
+    "probability": 0.09,
+    "category": "work",
+    "target_mode": "global",
+    "duration_minutes": 45,
+    "cooldown_days": 2,
+    "need_effects": {
+      "productivity": -5
+    },
+    "memory": {
+      "affected": {
+        "text": "read a circular confirming Friday\u2019s deadline while withdrawing the definition of Friday. The deadline is unresolved, not cancelled.",
+        "importance": 6,
+        "emotion": "irritation",
+        "sentiment": -0.2,
+        "thread": "eunnei_project",
+        "protected": true
+      }
+    }
+  },
+  {
     "id": "gossip_spreads",
     "name": "Gossip Spreads",
     "description": "Office gossip is making the rounds \u2014 someone's been talking behind backs.",

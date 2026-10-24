@@ -61,15 +61,22 @@ func _ready() -> void:
 
 	# --- LLM ---
 	_add_section(vbox, "AI Backend")
-	var llm_options := ["Auto (Recommended)", "Bundled Only", "Ollama Only", "Heuristic Only"]
+	var llm_options := ["Luna (cloud)", "Demo (rule-based)", "Local Auto", "Bundled Only", "Ollama Only"]
 	_add_dropdown(vbox, "Backend", llm_options, _llm_backend_to_index(SettingsManager.llm_backend), func(idx: int) -> void:
 		SettingsManager.llm_backend = _index_to_llm_backend(idx)
 	)
 
-	# Ollama URL
-	_add_text_input(vbox, "Ollama URL", SettingsManager.ollama_url, func(text: String) -> void:
-		SettingsManager.ollama_url = text
-	)
+	var status := Label.new()
+	status.text = LLMManager.get_status_text()
+	status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	vbox.add_child(status)
+	if not OS.has_feature("web"):
+		_add_text_input(vbox, "Cloud URL", SettingsManager.cloud_url, func(text: String) -> void:
+			SettingsManager.cloud_url = text
+		)
+		_add_text_input(vbox, "Ollama URL", SettingsManager.ollama_url, func(text: String) -> void:
+			SettingsManager.ollama_url = text
+		)
 
 	# --- Game ---
 	_add_section(vbox, "Game")
@@ -203,23 +210,14 @@ func _add_text_input(parent: VBoxContainer, label_text: String, initial: String,
 	var input := LineEdit.new()
 	input.text = initial
 	input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	input.text_submitted.connect(callback)
+	input.text_changed.connect(callback)
 	row.add_child(input)
 
 
 func _llm_backend_to_index(backend: String) -> int:
-	match backend:
-		"auto": return 0
-		"bundled": return 1
-		"ollama": return 2
-		"heuristic": return 3
-		_: return 0
+	return ["cloud", "heuristic", "auto", "bundled", "ollama"].find(backend)
 
 
 func _index_to_llm_backend(idx: int) -> String:
-	match idx:
-		0: return "auto"
-		1: return "bundled"
-		2: return "ollama"
-		3: return "heuristic"
-		_: return "auto"
+	var backends := ["cloud", "heuristic", "auto", "bundled", "ollama"]
+	return backends[clampi(idx, 0, backends.size() - 1)]

@@ -1,0 +1,7 @@
+.git
+.env*
+private
+data
+node_modules
+test
+*.credentials.json

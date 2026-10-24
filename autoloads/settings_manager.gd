@@ -16,7 +16,9 @@ var fullscreen: bool = false
 var desktop_pet_mode: bool = false
 
 # LLM
-var llm_backend: String = "auto"  # "auto", "bundled", "ollama", "heuristic"
+var llm_backend: String = "cloud"  # cloud, auto, bundled, ollama, heuristic
+var cloud_url: String = ""  # Empty resolves to this page's origin in a web build.
+var cloud_model: String = "gpt-6-luna"
 var ollama_url: String = "http://localhost:11434"
 var ollama_model: String = "gemma3:4b"
 
@@ -86,7 +88,9 @@ func load_settings() -> void:
 	desktop_pet_mode = cfg.get_value("display", "desktop_pet_mode", false)
 
 	# LLM
-	llm_backend = cfg.get_value("llm", "backend", "auto")
+	llm_backend = cfg.get_value("llm", "backend", "cloud")
+	cloud_url = cfg.get_value("llm", "cloud_url", "")
+	cloud_model = cfg.get_value("llm", "cloud_model", "gpt-6-luna")
 	ollama_url = cfg.get_value("llm", "ollama_url", "http://localhost:11434")
 	ollama_model = cfg.get_value("llm", "ollama_model", "gemma3:4b")
 
@@ -110,6 +114,8 @@ func save_settings() -> void:
 	cfg.set_value("display", "desktop_pet_mode", desktop_pet_mode)
 
 	cfg.set_value("llm", "backend", llm_backend)
+	cfg.set_value("llm", "cloud_url", cloud_url)
+	cfg.set_value("llm", "cloud_model", cloud_model)
 	cfg.set_value("llm", "ollama_url", ollama_url)
 	cfg.set_value("llm", "ollama_model", ollama_model)
 

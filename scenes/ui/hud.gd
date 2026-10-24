@@ -411,7 +411,7 @@ func _update_ratings() -> void:
 func _update_llm_label() -> void:
 	# A dot plus tooltip: the full backend string ("Ollama: Ollama (model)")
 	# ate a third of the status bar and collided with the PAUSED label.
-	llm_label.text = "• AI"
+	llm_label.text = "• LUNA" if LLMManager.active_backend_name == "cloud" and LLMManager.is_available else ("• AI" if LLMManager.is_available else "• DEMO")
 	llm_label.tooltip_text = LLMManager.get_status_text()
 	llm_label.mouse_filter = Control.MOUSE_FILTER_STOP
 	if LLMManager.is_available:
@@ -580,12 +580,14 @@ func _on_llm_status_changed(available: bool) -> void:
 	if available:
 		_show_toast("AI brain connected")
 	else:
-		_show_toast("AI brain offline. Using simpler decisions.", true)
+		_show_toast(LLMManager.get_status_text() + " · rule-based behavior", true)
 
 
 func _on_llm_backend_changed(backend_name: String) -> void:
 	_update_llm_label()
 	match backend_name:
+		"cloud":
+			_show_toast(LLMManager.get_status_text())
 		"bundled":
 			_show_toast("Using bundled AI model")
 		"ollama":

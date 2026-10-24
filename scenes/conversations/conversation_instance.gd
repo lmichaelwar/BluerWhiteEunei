@@ -100,6 +100,8 @@ func _request_next_line() -> void:
 
 	var prompt := PromptBuilder.build(template_name, {
 		"name": speaker.agent_name,
+		"private_context": EunneiStory.private_brief(speaker.personality),
+		"memories": EunneiStory.memories_for(speaker, listener.agent_name + " A Bluer White Eunnei " + history_text),
 		"description": speaker.personality.description if speaker.personality else "",
 		"personality": speaker.personality.get_personality_summary() if speaker.personality else "",
 		"speech_style": speaker.personality.speech_style if speaker.personality else "",
@@ -331,7 +333,7 @@ func _summarize_conversation() -> String:
 	if _history.is_empty():
 		return "a brief exchange"
 	var parts: PackedStringArray = []
-	var limit := mini(3, _history.size())
+	var limit := mini(8, _history.size())
 	for i in range(limit):
 		parts.append("%s said '%s'" % [_history[i]["speaker"], _history[i]["line"]])
 	return "; ".join(parts)

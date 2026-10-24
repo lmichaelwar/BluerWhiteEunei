@@ -5,7 +5,7 @@ static var _cache: Dictionary = {}
 
 
 static func build(template_name: String, tokens: Dictionary) -> String:
-	var template := _load_template(template_name)
+	var template := EunneiStory.WORLD_RULES + "\n" + _load_template(template_name)
 	for key in tokens:
 		template = template.replace("{%s}" % key, str(tokens[key]))
 	return template

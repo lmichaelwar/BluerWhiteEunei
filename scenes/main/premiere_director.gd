@@ -21,7 +21,7 @@ const MOLE_GUARANTEE_UNTIL_DAY := 4
 ## Light, social, premiere-friendly events — nothing that departs or kills a
 ## cast member the audience just met. Picked in order; first that fires wins.
 const PREMIERE_EVENTS: Array[String] = [
-	"pizza_delivery", "stolen_lunch", "gossip_spreads", "birthday",
+	"eunnei_custody", "eunnei_white_review", "eunnei_third_floor",
 ]
 
 var _seeded_secret: SecretState = null
@@ -44,6 +44,7 @@ func start() -> void:
 		ConfessionalDirector.request_cast_intros()
 	)
 	_seed_secret()
+	_seed_eunnei_office()
 
 
 func _seed_secret() -> void:
@@ -97,3 +98,34 @@ func _on_day_changed(day: int) -> void:
 		return
 	if WhodunitDirector.open_case() != null:
 		_mole_beat_done = true
+
+
+func _seed_eunnei_office() -> void:
+	# Only the authored cast receives this pilot; generic test sandboxes and
+	# existing saves keep their own history. Private briefs live in profiles.
+	if AgentManager.get_agent_by_name("Mara Vell") == null:
+		return
+	for agent in AgentManager.agents:
+		if not is_instance_valid(agent) or agent.is_dead:
+			continue
+		var already_seeded := false
+		for existing in agent.memory.memories:
+			if existing.narrative_thread == "eunnei_orientation":
+				already_seeded = true
+				break
+		if already_seeded:
+			continue
+		var entry: MemoryEntry = agent.memory.add_observation(
+			"The office bulletin reads: A Bluer White Eunnei must be demonstrably bluer by Friday. No approved definition is attached. Everyone has been assigned to the project.", 7.0)
+		entry.narrative_thread = "eunnei_orientation"
+		entry.decay_protected = true
+	var ivo := AgentManager.get_agent_by_name("Ivo Splice")
+	var leon := AgentManager.get_agent_by_name("Leon Rusk")
+	if ivo != null and leon != null:
+		var attraction: RelationshipEntry = ivo.relationships.get_relationship(leon.agent_name)
+		attraction.affinity = maxf(attraction.affinity, 15.0)
+		attraction.romantic_interest = maxf(attraction.romantic_interest, 25.0)
+		# Attraction is not a relationship. Courtship must happen on screen.
+	EventBus.narrative_event.emit(
+		"A Bluer White Eunnei is due Friday. Six departments have confidently begun six different projects.",
+		[], 4.0)
