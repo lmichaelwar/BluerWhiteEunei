@@ -22,6 +22,12 @@ jobs:
         working-directory: cloud
         run: npm test
 
+      - name: Test private Cloudflare runtime without credentials
+        working-directory: cloudflare
+        run: |
+          npm ci
+          npm test
+
       - name: Cache Godot
         id: cache-godot
         uses: actions/cache@v4

@@ -1,0 +1,17 @@
+{
+  "name": "eunnei-cloudflare",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "dev": "wrangler dev",
+    "check": "wrangler deploy --dry-run",
+    "deploy": "wrangler deploy",
+    "test": "node --test test/*.test.mjs",
+    "import-auth": "node scripts/import-auth.mjs"
+  },
+  "dependencies": { "jose": "6.2.13" },
+  "devDependencies": { "wrangler": "4.152.0" }
+}

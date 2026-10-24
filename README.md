@@ -7,7 +7,7 @@ The story is the priority. The existing Godot office, relationships, memories, g
 ## Current run modes
 
 - **Rule-based preview:** the office can run without Ollama or an OpenAI connection. The HUD explicitly says DEMO. This is not live Luna output.
-- **Luna:** a separate personal cloud bridge uses authorized ChatGPT plan usage through the documented Sign in with ChatGPT flow. The HUD says LUNA only after the bridge reports an authorized model connection. No automatic paid-API fallback.
+- **Luna:** the personal Cloudflare Worker uses separately authorized ChatGPT plan usage. A Durable Object retains the session, token rotation and request limits. The HUD distinguishes model readiness from completed live inference. No automatic paid-API fallback.
 - The browser must support WebGL2. The simulation runs in the browser tab; closing it does not continue the office on a server. Saves retain state for the next session.
 
 ## Run and build
@@ -21,7 +21,7 @@ godot --headless --export-release Web build/web/index.html
 python3 tools/package_web.py build/web build/site
 ```
 
-Serve `build/site` for the browser version. See `cloud/README.md` for the personal server and one-time subscription authorization, and `docs/story-bible.md` for the cast. Private Sites can serve the preview; ordinary Sites identity sign-in does not authorize ChatGPT model usage.
+Serve `build/site` for the browser version. See `cloudflare/README.md` for the private Cloudflare deployment and one-time subscription authorization, `cloud/README.md` for the optional Node server, and `docs/story-bible.md` for the cast. Website identity sign-in does not authorize ChatGPT model usage.
 
 The packager splits the WebAssembly engine into chunks of at most 8 MiB for the private Sites source transport. A browser loader reconstructs the original bytes; `build/web` remains an ordinary, unchanged Godot export.
 
