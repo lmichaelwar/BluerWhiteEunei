@@ -135,7 +135,13 @@ export function ollamaToResponses(body, model) {
 }
 
 export class InferenceClient {
-  constructor(store, { fetchImpl = fetch, model = 'gpt-6-luna' } = {}) { this.store = store; this.fetchImpl = fetchImpl; this.model = model; }
+  constructor(store, { fetchImpl = fetch, model = 'gpt-6-luna' } = {}) {
+    this.store = store;
+    // Workers' native fetch rejects an unrelated receiver. Keep the supplied
+    // function a plain call instead of invoking it as a property of this client.
+    this.fetchImpl = (...args) => fetchImpl(...args);
+    this.model = model;
+  }
   async request(path, init = {}) {
     // Leave time for the Godot client's 45-second request deadline. This signal
     // also covers the streaming body and the single 401 refresh retry.

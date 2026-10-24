@@ -28,7 +28,9 @@ export function validateCredentialRecord(record) {
 
 export class DurableTokenStore {
   constructor(storage, { fetchImpl = fetch, now = Date.now } = {}) {
-    this.storage = storage; this.fetchImpl = fetchImpl; this.now = now; this.refreshing = null;
+    this.storage = storage;
+    this.fetchImpl = (...args) => fetchImpl(...args);
+    this.now = now; this.refreshing = null;
   }
   async load() {
     const record = await this.storage.get('credentials');

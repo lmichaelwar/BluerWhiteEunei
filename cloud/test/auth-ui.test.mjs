@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
-import { handleAuthNavigation, launchAuthBrowser } from '../src/auth-ui.mjs';
+import { spawn } from 'node:child_process';
+import { handleAuthNavigation, launchAuthBrowser, shutdownAuthServer } from '../src/auth-ui.mjs';
 
 const options = { port: 1455, authorizationUrl: 'https://auth.openai.com/example?state=mock-state' };
 function navigate(path, { host = '127.0.0.1:1455', method = 'GET' } = {}) {
@@ -21,6 +22,7 @@ test('local landing page gives a visible sign-in link without embedding the OAut
   assert.match(result.body, /Continue with ChatGPT/); assert.match(result.body, /href="\/auth\/start"/);
   assert.doesNotMatch(result.body, /mock-state|auth\.openai\.com/);
   assert.equal(result.headers['cache-control'], 'no-store'); assert.equal(result.headers['referrer-policy'], 'no-referrer');
+  assert.equal(result.headers.connection, 'close');
 });
 
 test('local start redirects to the pending attempt and validated callback remains unchanged', () => {
@@ -54,4 +56,56 @@ test('browser launcher reports a spawn failure without exposing its raw error', 
   launchAuthBrowser('http://127.0.0.1:1455/', { report: text => reports.push(text), spawnImpl: () => child });
   child.emit('error', new Error('sensitive detail'));
   assert.equal(reports.length, 1); assert.match(reports[0], /could not start/); assert.doesNotMatch(reports[0], /sensitive detail/);
+});
+
+test('normal shutdown waits for the callback response and queued output before preserving exit status', async () => {
+  const response = new EventEmitter();
+  const events = [];
+  const server = { close(callback) { events.push('server closed'); callback(); } };
+  const stdout = { write(_text, callback) { events.push('stdout drained'); callback(); } };
+  const stderr = { write(_text, callback) { events.push('stderr drained'); callback(); } };
+  let exitCode;
+  shutdownAuthServer(server, { response, exitCode: 1, stdout, stderr, exit: code => { events.push('exit'); exitCode = code; } });
+  assert.deepEqual(events, []);
+  response.emit('finish');
+  assert.deepEqual(events, ['server closed', 'stdout drained', 'stderr drained', 'exit']);
+  assert.equal(exitCode, 1);
+});
+
+test('a real child exits after response flush even with another HTTP connection held open', async t => {
+  const moduleUrl = new URL('../src/auth-ui.mjs', import.meta.url).href;
+  const script = `
+    import { createServer, get } from 'node:http';
+    import { connect } from 'node:net';
+    import { shutdownAuthServer } from ${JSON.stringify(moduleUrl)};
+    let held;
+    const server = createServer((req, res) => {
+      if (req.url === '/held') {
+        get({ host: '127.0.0.1', port: server.address().port, path: '/complete' }, response => {
+          let body = ''; response.on('data', chunk => { body += chunk; });
+          response.on('end', () => console.log('browser received: ' + body));
+        });
+        return;
+      }
+      res.setHeader('Connection', 'close');
+      res.once('finish', () => console.log('response flushed'));
+      res.end('complete');
+      console.log('completion output retained');
+      process.exitCode = 7;
+      shutdownAuthServer(server, { response: res, deadlineMs: 150 });
+    });
+    server.listen(0, '127.0.0.1', () => {
+      held = connect(server.address().port, '127.0.0.1', () => held.write('GET /held HTTP/1.1\\r\\nHost: 127.0.0.1\\r\\n\\r\\n'));
+      held.on('error', () => {});
+    });
+  `;
+  const child = spawn(process.execPath, ['--input-type=module', '--eval', script], { stdio: ['ignore', 'pipe', 'pipe'] });
+  t.after(() => { if (child.exitCode === null) child.kill(); });
+  let output = '', errors = '';
+  child.stdout.on('data', chunk => { output += chunk; }); child.stderr.on('data', chunk => { errors += chunk; });
+  const limit = setTimeout(() => child.kill(), 2500);
+  const result = await new Promise(resolve => child.once('close', (code, signal) => resolve({ code, signal })));
+  clearTimeout(limit);
+  assert.equal(result.signal, null, errors); assert.equal(result.code, 7, errors);
+  assert.match(output, /completion output retained/); assert.match(output, /response flushed/); assert.match(output, /browser received: complete/);
 });

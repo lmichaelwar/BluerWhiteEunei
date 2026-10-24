@@ -8,6 +8,7 @@ export function handleAuthNavigation(req, res, { port, authorizationUrl }) {
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('Referrer-Policy', 'no-referrer');
   res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Connection', 'close');
   const reply = (status, message) => {
     res.writeHead(status, { 'Content-Type': 'text/plain; charset=utf-8' });
     res.end(message);
@@ -56,4 +57,45 @@ export function launchAuthBrowser(url, { spawnImpl = spawn, platform = process.p
     child.unref();
     return child;
   } catch { fallback('could not start'); return null; }
+}
+
+// This is a one-shot CLI, so completion must not depend on a browser closing
+// every speculative connection. Wait for the response and queued output first;
+// terminate within the deadline even if a connection or launcher stays alive.
+export function shutdownAuthServer(server, {
+  response,
+  exitCode = process.exitCode ?? 0,
+  deadlineMs = 1800,
+  exit = code => process.exit(code),
+  stdout = process.stdout,
+  stderr = process.stderr,
+} = {}) {
+  let closing = false, finished = false;
+  const finish = () => {
+    if (finished) return;
+    finished = true;
+    clearTimeout(deadline);
+    exit(exitCode);
+  };
+  const deadline = setTimeout(() => {
+    server.closeAllConnections?.();
+    finish();
+  }, Math.min(2000, Math.max(1, deadlineMs)));
+  const drainOutput = () => {
+    let pending = 2;
+    const drained = () => { if (--pending === 0) finish(); };
+    for (const stream of [stdout, stderr]) {
+      try { stream.write('', drained); } catch { drained(); }
+    }
+  };
+  const close = () => {
+    if (closing) return;
+    closing = true;
+    server.close(drainOutput);
+  };
+  if (!response || response.writableFinished || response.destroyed) close();
+  else {
+    response.once('finish', close);
+    response.once('close', close);
+  }
 }

@@ -2,7 +2,7 @@ import { createServer } from 'node:http';
 import { join } from 'node:path';
 import { defaultDataDir, hostId, readJSON, writeJSON } from './storage.mjs';
 import { makeAuthorization, exchangeCode, BridgeError } from './siwc.mjs';
-import { handleAuthNavigation, launchAuthBrowser, localAuthUrl } from './auth-ui.mjs';
+import { handleAuthNavigation, launchAuthBrowser, localAuthUrl, shutdownAuthServer } from './auth-ui.mjs';
 
 // Run on the computer where Michael opens the browser, not on the cloud VM.
 const dataDir = defaultDataDir;
@@ -32,10 +32,10 @@ const server = createServer(async (req, res) => {
     res.end(error instanceof BridgeError ? error.message : 'Sign-in failed. Retry from the terminal.');
     console.error(error instanceof BridgeError ? `${error.code}: ${error.message}` : 'Sign-in failed; no credentials saved.');
     process.exitCode = 1;
-  } finally { clearTimeout(timeout); server.close(); }
+  } finally { clearTimeout(timeout); shutdownAuthServer(server, { response: res }); }
 });
-const timeout = setTimeout(() => { console.error('Sign-in timed out after ten minutes; rerun npm run auth.'); process.exitCode = 1; server.close(); }, 600_000);
-server.on('error', () => { clearTimeout(timeout); console.error('Could not bind local callback; choose another EUNNEI_AUTH_PORT.'); process.exitCode = 1; });
+const timeout = setTimeout(() => { console.error('Sign-in timed out after ten minutes; rerun npm run auth.'); process.exitCode = 1; shutdownAuthServer(server); }, 600_000);
+server.on('error', () => { clearTimeout(timeout); console.error('Could not bind local callback; choose another EUNNEI_AUTH_PORT.'); process.exitCode = 1; shutdownAuthServer(server); });
 server.listen(port, '127.0.0.1', () => {
   const url = localAuthUrl(port);
   console.log(`Eunnei sign-in helper is ready: ${url}`);
