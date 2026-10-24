@@ -39,7 +39,9 @@ Run this on the computer whose browser you will use. The documented callback is 
 npm run auth
 ```
 
-The helper opens OpenAI's sign-in and consent page. It generates fresh state, nonce and PKCE; performs dynamic registration; validates the signed ID token, issuer, audience, nonce, expiry and granted plan scope; then saves owner-only credentials in `~/.config/eunnei/credentials.json`. It does not run inference. Override the protected directory with `EUNNEI_DATA_DIR`; override the local callback port with `EUNNEI_AUTH_PORT` if 1455 is occupied.
+The helper prints and opens a local page at `http://127.0.0.1:1455/` with a **Continue with ChatGPT** button. If no window appears, open that address manually in a browser on the same computer. Running the helper through SSH does not guarantee a visible browser window. The page expires after ten minutes; restart the helper if it expires.
+
+It generates fresh state, nonce and PKCE; performs dynamic registration; validates the signed ID token, issuer, audience, nonce, expiry and granted plan scope; then saves owner-only credentials in `~/.config/eunnei/credentials.json`. It does not run inference. Override the protected directory with `EUNNEI_DATA_DIR`; override the local callback port with `EUNNEI_AUTH_PORT` if 1455 is occupied.
 
 Use an SSH channel to transfer **only this helper's credential record** to the personal VM. Keep it outside the repository, image build context, static files, logs and chat. Do not transfer the laptop's `host.json`. On the VM, import it:
 

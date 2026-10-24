@@ -56,6 +56,8 @@ cd ../cloud
 npm run auth
 ```
 
+Open the helper's printed local address in a browser on that same computer, then select **Continue with ChatGPT**. If an SSH session cannot open a visible window, the local link still works; it cannot be opened from another computer without a loopback tunnel. The helper expires after ten minutes.
+
 The official first-time callback is `http://127.0.0.1:<port>/auth/callback`. Replacing it with the Cloudflare hostname is not the documented registration flow. The helper validates the issued registration and plan-usage scope, saving a protected record at `~/.config/eunnei/credentials.json` by default. Do not import a Codex token or another app's registration.
 
 Transfer that record once to the protected `/admin/import` endpoint over HTTPS. Import preserves the Cloudflare deployment's distinct host identity. The Durable Object then owns token rotation; stop using the local copy for live requests so two runtimes cannot race the same refresh session. Keep the file out of source control, static assets, chat and logs. Do not reseed credentials from an old secret on each deployment.
