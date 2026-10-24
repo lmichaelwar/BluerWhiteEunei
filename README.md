@@ -23,6 +23,8 @@ python3 tools/package_web.py build/web build/site
 
 Serve `build/site` for the browser version. See `cloud/README.md` for the personal server and one-time subscription authorization, and `docs/story-bible.md` for the cast. Private Sites can serve the preview; ordinary Sites identity sign-in does not authorize ChatGPT model usage.
 
+The packager splits the WebAssembly engine into chunks of at most 8 MiB for the private Sites source transport. A browser loader reconstructs the original bytes; `build/web` remains an ordinary, unchanged Godot export.
+
 Do not put tokens, passwords, saved playthroughs or credential files in Git. Upstream's code retains its original rights notice below; this modification does not relicense Aphae. The original cloud bridge has its own license.
 
 ---
